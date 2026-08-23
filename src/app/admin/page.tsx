@@ -33,6 +33,7 @@ export default function AdminPanel() {
     producto: '',
     cantidad: 1,
     precioUsd: '',
+    metodoPago: 'Efectivo',
     monedaPago: 'PYG',
     montoRecibido: ''
   });
@@ -408,12 +409,12 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* PESTAÑA VENTAS - CON CALCULADORA DE VUELTO / CAMBIO */}
+        {/* PESTAÑA VENTAS */}
         {tab === 'ventas' && (
           <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-3xl mx-auto space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Registrar Venta & Calculadora de Cambio</h2>
-              <p className="text-xs text-slate-500">Ingresa la venta y calcula al instante el vuelto en la moneda seleccionada.</p>
+              <h2 className="text-xl font-bold text-slate-800">Registrar Venta</h2>
+              <p className="text-xs text-slate-500">Ingresa los datos de la transacción y selecciona el método de pago.</p>
             </div>
 
             <form onSubmit={e => { e.preventDefault(); alert('Venta registrada con éxito'); }} className="space-y-6">
@@ -428,69 +429,85 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Precio Unitario en USD *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Precio Unitario USD *</label>
                   <input type="number" step="0.01" placeholder="Ej: 85.00" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-800" required value={formVenta.precioUsd} onChange={e => setFormVenta({...formVenta, precioUsd: e.target.value})} />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Cantidad *</label>
                   <input type="number" min={1} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-800" value={formVenta.cantidad} onChange={e => setFormVenta({...formVenta, cantidad: parseInt(e.target.value) || 1})} />
                 </div>
-              </div>
-
-              {/* Caja de Cobro y Cambio */}
-              <div className="bg-slate-900 text-white p-6 rounded-2xl space-y-4 shadow-lg">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                  <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Caja & Cobro Efectivo</span>
-                  <div className="flex gap-2">
-                    {['PYG', 'USD', 'BRL'].map(m => (
-                      <button key={m} type="button" onClick={() => setFormVenta({...formVenta, monedaPago: m})} className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all ${formVenta.monedaPago === m ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                    <span className="text-[10px] text-slate-400 block font-bold">Total USD</span>
-                    <span className="text-base font-black text-white">${totalUsdVenta.toFixed(2)}</span>
-                  </div>
-                  <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                    <span className="text-[10px] text-slate-400 block font-bold">Total PYG</span>
-                    <span className="text-base font-black text-emerald-400">₲ {totalPygVenta.toLocaleString()}</span>
-                  </div>
-                  <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-                    <span className="text-[10px] text-slate-400 block font-bold">Total BRL</span>
-                    <span className="text-base font-black text-blue-400">R$ {totalBrlVenta.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">
-                      Cliente Paga con ({formVenta.monedaPago})
-                    </label>
-                    <input 
-                      type="number" 
-                      placeholder={formVenta.monedaPago === 'PYG' ? 'Ej: 700000' : 'Ej: 100'} 
-                      className="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-lg font-black text-amber-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      value={formVenta.montoRecibido}
-                      onChange={e => setFormVenta({...formVenta, montoRecibido: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Vuelto / Cambio a Entregar</span>
-                    <span className="text-2xl font-black text-emerald-400 mt-1">
-                      {formVenta.monedaPago === 'PYG' && `₲ ${Math.round(vuelto).toLocaleString()}`}
-                      {formVenta.monedaPago === 'USD' && `$ ${vuelto.toFixed(2)}`}
-                      {formVenta.monedaPago === 'BRL' && `R$ ${vuelto.toFixed(2)}`}
-                    </span>
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Método de Pago *</label>
+                  <select 
+                    className="w-full p-2.5 border border-slate-200 rounded-xl text-sm bg-white font-bold text-purple-700" 
+                    value={formVenta.metodoPago} 
+                    onChange={e => setFormVenta({...formVenta, metodoPago: e.target.value})}
+                  >
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Tarjeta">💳 Tarjeta</option>
+                    <option value="Transferencia bancaria">🏦 Transferencia Bancaria</option>
+                    <option value="Pix">⚡ Pix</option>
+                  </select>
                 </div>
               </div>
+
+              {/* Resumen del Monto a Pagar */}
+              <div className="bg-slate-100 p-4 rounded-xl border border-slate-200 grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Total USD</span>
+                  <span className="text-lg font-black text-slate-800">${totalUsdVenta.toFixed(2)}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Total PYG</span>
+                  <span className="text-lg font-black text-emerald-600">₲ {totalPygVenta.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Total BRL</span>
+                  <span className="text-lg font-black text-blue-600">R$ {totalBrlVenta.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Calculadora de Vuelto - SÓLO SI SE SELECCIONA EFECTIVO */}
+              {formVenta.metodoPago === 'Efectivo' && (
+                <div className="bg-slate-900 text-white p-6 rounded-2xl space-y-4 shadow-lg">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Cobro en Efectivo & Calculadora de Cambio</span>
+                    <div className="flex gap-2">
+                      {['PYG', 'USD', 'BRL'].map(m => (
+                        <button key={m} type="button" onClick={() => setFormVenta({...formVenta, monedaPago: m})} className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all ${formVenta.monedaPago === m ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                        Cliente Paga con ({formVenta.monedaPago})
+                      </label>
+                      <input 
+                        type="number" 
+                        placeholder={formVenta.monedaPago === 'PYG' ? 'Ej: 700000' : 'Ej: 100'} 
+                        className="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-lg font-black text-amber-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        value={formVenta.montoRecibido}
+                        onChange={e => setFormVenta({...formVenta, montoRecibido: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
+                      <span className="text-xs font-bold text-slate-400 uppercase">Vuelto / Cambio a Entregar</span>
+                      <span className="text-2xl font-black text-emerald-400 mt-1">
+                        {formVenta.monedaPago === 'PYG' && `₲ ${Math.round(vuelto).toLocaleString()}`}
+                        {formVenta.monedaPago === 'USD' && `$ ${vuelto.toFixed(2)}`}
+                        {formVenta.monedaPago === 'BRL' && `R$ ${vuelto.toFixed(2)}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <button type="submit" className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-md">
                 Registrar Venta Concretada
