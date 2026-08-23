@@ -3,7 +3,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function AdminPanel() {
-  const [tab, setTab] = useState<'ingreso' | 'ventas' | 'divisas'>('ingreso');
+  const [autenticado, setAutenticado] = useState(false);
+  const [usuarioInput, setUsuarioInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [tab, setTab] = useState<'ingreso' | 'divisas'>('ingreso');
   const [monedas, setMonedas] = useState({ BRL: 5.0, PYG: 7500 });
   
   const [formProducto, setFormProducto] = useState({
@@ -12,9 +15,22 @@ export default function AdminPanel() {
     foto1_url: '', foto2_url: '', foto3_url: ''
   });
 
+  // CREDENCIALES DE ACCESO
+  const USER_ADMIN = 'AdminZaf';
+  const PASS_ADMIN = '270413zafir';
+
+  function validarAcceso(e: React.FormEvent) {
+    e.preventDefault();
+    if (usuarioInput === USER_ADMIN && passwordInput === PASS_ADMIN) {
+      setAutenticado(true);
+    } else {
+      alert('Usuario o contraseña incorrectos');
+    }
+  }
+
   useEffect(() => {
-    cargarDivisas();
-  }, []);
+    if (autenticado) cargarDivisas();
+  }, [autenticado]);
 
   async function cargarDivisas() {
     const { data } = await supabase.from('divisas').select('*');
@@ -59,13 +75,57 @@ export default function AdminPanel() {
     }
   }
 
+  // PANTALLA DE LOGIN
+  if (!autenticado) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans p-4">
+        <form onSubmit={validarAcceso} className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm space-y-4 border">
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Panel Admin</h2>
+            <p className="text-sm text-gray-500">Inicia sesión para gestionar el catálogo</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+            <input
+              type="text"
+              placeholder="Ingresa tu usuario"
+              className="w-full p-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 text-black"
+              value={usuarioInput}
+              onChange={e => setUsuarioInput(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              className="w-full p-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 text-black"
+              value={passwordInput}
+              onChange={e => setPasswordInput(e.target.value)}
+              required
+            />
+          </div>
+
+          <button type="submit" className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-bold hover:bg-purple-700 transition-colors">
+            Ingresar
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // PANEL PRINCIPAL
   return (
-    <div className="min-h-screen bg-gray-100 p-6 font-sans">
+    <div className="min-h-screen bg-gray-100 p-6 font-sans text-gray-800">
       <header className="max-w-5xl mx-auto bg-white p-4 rounded-lg shadow mb-6 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-gray-800">Panel Admin - Perfumería</h1>
+        <h1 className="text-xl font-bold">Panel Admin - Perfumería</h1>
         <div className="flex gap-2">
           <button onClick={() => setTab('ingreso')} className={`px-4 py-2 rounded ${tab === 'ingreso' ? 'bg-purple-600 text-white' : 'bg-gray-200'}`}>Ingresar Producto</button>
           <button onClick={() => setTab('divisas')} className={`px-4 py-2 rounded ${tab === 'divisas' ? 'bg-purple-600 text-white' : 'bg-gray-200'}`}>Divisas</button>
+          <button onClick={() => setAutenticado(false)} className="px-4 py-2 rounded bg-red-500 text-white">Salir</button>
         </div>
       </header>
 
