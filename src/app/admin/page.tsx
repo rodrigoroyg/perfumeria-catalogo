@@ -10,11 +10,12 @@ export default function AdminPanel() {
   
   // Tasa de Divisas
   const [monedas, setMonedas] = useState({ BRL: 5.0, PYG: 7500 });
+  const [guardandoDivisas, setGuardandoDivisas] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
   // Métrica Dashboard
-  const [metaVentas, setMetaVentas] = useState(5000); // Meta en USD
-  const [ventasActuales, setVentasActuales] = useState(3250); // Ejemplo actual
+  const [metaVentas, setMetaVentas] = useState(5000);
+  const [ventasActuales, setVentasActuales] = useState(3250);
   const [gastos, setGastos] = useState({ limite: 1500, actual: 420 });
   const [inversiones, setInversiones] = useState({ meta: 8000, actual: 5400 });
   const [desplegarRanking, setDesplegarRanking] = useState(true);
@@ -24,6 +25,16 @@ export default function AdminPanel() {
     nombre: '', descripcion: '', categoria: 'Masculino',
     costo_usd: '', margen_pct: '30', proveedor: '', num_factura: '',
     foto1_url: '', foto2_url: '', foto3_url: ''
+  });
+
+  // Formulario de Venta Avanzado
+  const [formVenta, setFormVenta] = useState({
+    cliente: '',
+    producto: '',
+    cantidad: 1,
+    precioUsd: '',
+    monedaPago: 'PYG',
+    montoRecibido: ''
   });
 
   // Credenciales
@@ -66,7 +77,22 @@ export default function AdminPanel() {
     }
   }
 
-  // CÁLCULOS DE PRECIO
+  async function guardarDivisasDB() {
+    setGuardandoDivisas(true);
+    try {
+      await supabase.from('divisas').upsert([
+        { moneda: 'PYG', tasa_contra_usd: monedas.PYG },
+        { moneda: 'BRL', tasa_contra_usd: monedas.BRL }
+      ]);
+      alert('¡Cotizaciones de divisas actualizadas correctamente!');
+    } catch (err: any) {
+      alert('Error al guardar cotizaciones: ' + err.message);
+    } finally {
+      setGuardandoDivisas(false);
+    }
+  }
+
+  // CÁLCULOS DE PRECIO DE PRODUCTO
   const costo = parseFloat(formProducto.costo_usd) || 0;
   const margen = parseFloat(formProducto.margen_pct) || 0;
   const precioUsdCalculado = (costo + (costo * (margen / 100))).toFixed(2);
@@ -74,7 +100,19 @@ export default function AdminPanel() {
   const precioPygCalculado = Math.round(precioPygSinRedondeo / 1000) * 1000;
   const precioBrlCalculado = (Number(precioUsdCalculado) * monedas.BRL).toFixed(2);
 
-  // Porcentajes de barras de carga
+  // CÁLCULOS DE VENTA Y VUELTO
+  const totalUsdVenta = (parseFloat(formVenta.precioUsd) || 0) * (formVenta.cantidad || 1);
+  const totalPygVenta = Math.round((totalUsdVenta * monedas.PYG) / 1000) * 1000;
+  const totalBrlVenta = Number((totalUsdVenta * monedas.BRL).toFixed(2));
+
+  let totalAPagar = totalUsdVenta;
+  if (formVenta.monedaPago === 'PYG') totalAPagar = totalPygVenta;
+  if (formVenta.monedaPago === 'BRL') totalAPagar = totalBrlVenta;
+
+  const recibido = parseFloat(formVenta.montoRecibido) || 0;
+  const vuelto = recibido > totalAPagar ? recibido - totalAPagar : 0;
+
+  // Porcentajes Dashboard
   const pctMetaVentas = Math.min(Math.round((ventasActuales / metaVentas) * 100), 100);
   const pctGastos = Math.min(Math.round((gastos.actual / gastos.limite) * 100), 100);
   const pctInversiones = Math.min(Math.round((inversiones.actual / inversiones.meta) * 100), 100);
@@ -192,10 +230,7 @@ export default function AdminPanel() {
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-slate-800">Métricas & Metas del Mes</h2>
 
-            {/* SECCIÓN 1: BARRAS DE PROGRESO Y METAS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Meta de Ventas */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">🎯 Meta de Ventas</span>
@@ -213,7 +248,6 @@ export default function AdminPanel() {
                 <p className="text-[11px] text-slate-400">Faltan ${(metaVentas - ventasActuales).toLocaleString()} USD para cumplir la meta del mes.</p>
               </div>
 
-              {/* Gastos Varios */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">💸 Gastos Varios</span>
@@ -231,7 +265,6 @@ export default function AdminPanel() {
                 <p className="text-[11px] text-slate-400">Presupuesto disponible: ${(gastos.limite - gastos.actual).toLocaleString()} USD.</p>
               </div>
 
-              {/* Inversiones en Stock */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">📦 Inversión Stock</span>
@@ -248,10 +281,8 @@ export default function AdminPanel() {
                 </div>
                 <p className="text-[11px] text-slate-400">Capital invertido en compras recientes.</p>
               </div>
-
             </div>
 
-            {/* SECCIÓN 2: RANKING DESPLEGABLE DE PRODUCTOS MÁS VENDIDOS */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <button 
                 onClick={() => setDesplegarRanking(!desplegarRanking)}
@@ -286,7 +317,6 @@ export default function AdminPanel() {
                 </div>
               )}
             </div>
-
           </div>
         )}
 
@@ -378,46 +408,103 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* PESTAÑA VENTAS */}
+        {/* PESTAÑA VENTAS - CON CALCULADORA DE VUELTO / CAMBIO */}
         {tab === 'ventas' && (
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-2xl mx-auto space-y-6">
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-3xl mx-auto space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Registrar Venta</h2>
-              <p className="text-xs text-slate-500">Anota ventas concretadas en mostrador o WhatsApp.</p>
+              <h2 className="text-xl font-bold text-slate-800">Registrar Venta & Calculadora de Cambio</h2>
+              <p className="text-xs text-slate-500">Ingresa la venta y calcula al instante el vuelto en la moneda seleccionada.</p>
             </div>
 
-            <form onSubmit={e => { e.preventDefault(); alert('Venta registrada'); }} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del Producto / Cliente</label>
-                <input type="text" placeholder="Ej: Carolina Herrera - Cliente Maria" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm" required />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={e => { e.preventDefault(); alert('Venta registrada con éxito'); }} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Cantidad</label>
-                  <input type="number" defaultValue={1} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm" required />
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Cliente (Opcional)</label>
+                  <input type="text" placeholder="Ej: María Giménez" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm" value={formVenta.cliente} onChange={e => setFormVenta({...formVenta, cliente: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Moneda de Pago</label>
-                  <select className="w-full p-2.5 border border-slate-200 rounded-xl text-sm bg-white">
-                    <option>USD ($)</option>
-                    <option>PYG (₲)</option>
-                    <option>BRL (R$)</option>
-                  </select>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Producto Vendido *</label>
+                  <input type="text" placeholder="Ej: CH Bad Boy 100ml" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm" required value={formVenta.producto} onChange={e => setFormVenta({...formVenta, producto: e.target.value})} />
                 </div>
               </div>
-              <button type="submit" className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition-all">
-                Registrar Venta
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Precio Unitario en USD *</label>
+                  <input type="number" step="0.01" placeholder="Ej: 85.00" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-800" required value={formVenta.precioUsd} onChange={e => setFormVenta({...formVenta, precioUsd: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Cantidad *</label>
+                  <input type="number" min={1} className="w-full p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-800" value={formVenta.cantidad} onChange={e => setFormVenta({...formVenta, cantidad: parseInt(e.target.value) || 1})} />
+                </div>
+              </div>
+
+              {/* Caja de Cobro y Cambio */}
+              <div className="bg-slate-900 text-white p-6 rounded-2xl space-y-4 shadow-lg">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Caja & Cobro Efectivo</span>
+                  <div className="flex gap-2">
+                    {['PYG', 'USD', 'BRL'].map(m => (
+                      <button key={m} type="button" onClick={() => setFormVenta({...formVenta, monedaPago: m})} className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all ${formVenta.monedaPago === m ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                    <span className="text-[10px] text-slate-400 block font-bold">Total USD</span>
+                    <span className="text-base font-black text-white">${totalUsdVenta.toFixed(2)}</span>
+                  </div>
+                  <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                    <span className="text-[10px] text-slate-400 block font-bold">Total PYG</span>
+                    <span className="text-base font-black text-emerald-400">₲ {totalPygVenta.toLocaleString()}</span>
+                  </div>
+                  <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                    <span className="text-[10px] text-slate-400 block font-bold">Total BRL</span>
+                    <span className="text-base font-black text-blue-400">R$ {totalBrlVenta.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Cliente Paga con ({formVenta.monedaPago})
+                    </label>
+                    <input 
+                      type="number" 
+                      placeholder={formVenta.monedaPago === 'PYG' ? 'Ej: 700000' : 'Ej: 100'} 
+                      className="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-lg font-black text-amber-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={formVenta.montoRecibido}
+                      onChange={e => setFormVenta({...formVenta, montoRecibido: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex flex-col justify-center text-center">
+                    <span className="text-xs font-bold text-slate-400 uppercase">Vuelto / Cambio a Entregar</span>
+                    <span className="text-2xl font-black text-emerald-400 mt-1">
+                      {formVenta.monedaPago === 'PYG' && `₲ ${Math.round(vuelto).toLocaleString()}`}
+                      {formVenta.monedaPago === 'USD' && `$ ${vuelto.toFixed(2)}`}
+                      {formVenta.monedaPago === 'BRL' && `R$ ${vuelto.toFixed(2)}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" className="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-md">
+                Registrar Venta Concretada
               </button>
             </form>
           </div>
         )}
 
-        {/* PESTAÑA DIVISAS */}
+        {/* PESTAÑA DIVISAS CON BOTÓN GUARDAR */}
         {tab === 'divisas' && (
           <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-2xl mx-auto space-y-6">
             <div>
               <h2 className="text-xl font-bold text-slate-800">Ajuste de Cotizaciones</h2>
-              <p className="text-xs text-slate-500">Actualiza las tasas oficiales del día.</p>
+              <p className="text-xs text-slate-500">Actualiza las tasas oficiales del día y presiona guardar para aplicarlas al catálogo.</p>
             </div>
 
             <div className="space-y-4">
@@ -442,6 +529,15 @@ export default function AdminPanel() {
                   <input type="number" step="0.01" value={monedas.BRL} onChange={e => setMonedas({...monedas, BRL: parseFloat(e.target.value) || 0})} className="p-2 border border-slate-300 rounded-lg text-sm font-bold w-32" />
                 </div>
               </div>
+
+              <button 
+                type="button" 
+                onClick={guardarDivisasDB}
+                disabled={guardandoDivisas}
+                className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-md shadow-purple-100 disabled:bg-slate-300"
+              >
+                {guardandoDivisas ? 'Guardando Cotizaciones...' : '💾 Guardar Cotizaciones'}
+              </button>
             </div>
           </div>
         )}
