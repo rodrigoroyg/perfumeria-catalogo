@@ -1,9 +1,6 @@
-import type { Metadata } from 'next';
-import './globals.css';
-
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Catálogo de Perfumes',
-  description: 'Catálogo de productos y perfumería',
+  description: 'Catálogo de productos',
 };
 
 export default function RootLayout({
@@ -13,7 +10,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body className="bg-gray-50">{children}</body>
     </html>
   );
 }
