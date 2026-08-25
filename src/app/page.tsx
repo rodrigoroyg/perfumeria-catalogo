@@ -1,10 +1,83 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import ProductCard, { Product } from '../components/ProductCard';
 
+// INTERFAZ DE PRODUCTO
+export interface Product {
+  id: number | string;
+  name: string;
+  brand: string;
+  price: number;
+  image?: string;
+  inStock: boolean;
+  description?: string;
+}
+
+// COMPONENTE PRODUCT CARD INTEGRADO
+function ProductCard({ product, whatsappNumber }: { product: Product; whatsappNumber: string }) {
+  const formattedPrice = new Intl.NumberFormat('es-PY', {
+    style: 'currency',
+    currency: 'PYG',
+    maximumFractionDigits: 0,
+  }).format(product.price);
+
+  const handleBuy = () => {
+    const message = encodeURIComponent(
+      `Hola Zafir, me interesa obtener información sobre el perfume: ${product.name} (${product.brand})`
+    );
+    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
+  };
+
+  return (
+    <div className="bg-[#0e131f] border border-gray-800/80 rounded-2xl p-5 flex flex-col justify-between hover:border-purple-500/50 transition-all duration-300 group hover:shadow-xl hover:shadow-purple-950/20">
+      <div>
+        <div className="relative w-full h-52 bg-[#0a0d14] rounded-xl overflow-hidden flex items-center justify-center border border-gray-800/50 group-hover:border-purple-900/40 transition-colors">
+          {product.image ? (
+            <img src={product.image} alt={product.name} className="object-contain h-full w-full p-4 group-hover:scale-105 transition-transform duration-300" />
+          ) : (
+            <div className="text-gray-600 text-xs font-medium uppercase tracking-widest flex flex-col items-center gap-2">
+              <svg className="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              <span>{product.brand}</span>
+            </div>
+          )}
+          <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+            product.inStock ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' : 'bg-rose-950/80 text-rose-400 border border-rose-800/60'
+          }`}>
+            {product.inStock ? 'Disponible' : 'Agotado'}
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-1.5">
+          <p className="text-[11px] font-bold tracking-wider text-purple-400 uppercase">{product.brand}</p>
+          <h3 className="font-bold text-base text-white group-hover:text-purple-300 transition-colors line-clamp-1">{product.name}</h3>
+          {product.description && (
+            <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">{product.description}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-gray-800/60 flex items-center justify-between gap-3">
+        <div>
+          <span className="text-[10px] text-gray-500 block font-medium">Precio</span>
+          <span className="text-lg font-black text-white tracking-tight">{formattedPrice}</span>
+        </div>
+        <button
+          onClick={handleBuy}
+          disabled={!product.inStock}
+          className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-purple-600/20 active:scale-95"
+        >
+          Consultar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// PÁGINA PRINCIPAL
 const API_URL = process.env.NEXT_PUBLIC_SHEETS_API_URL || ''; 
-const WHATSAPP_NUMBER = '595900000000'; // Tu número de atención
+const WHATSAPP_NUMBER = '595900000000'; 
 const ITEMS_PER_PAGE = 8;
 
 export default function Home() {
@@ -206,12 +279,10 @@ export default function Home() {
         )}
       </main>
 
-      {/* FOOTER COMPLETO (RESTAURADO SEGÚN DISEÑO) */}
+      {/* FOOTER */}
       <footer className="border-t border-gray-800/60 bg-[#080b11] pt-12 pb-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10 border-b border-gray-800/60">
-            
-            {/* LOGO Y ESlogan */}
             <div className="space-y-4">
               <div className="inline-block bg-white text-black font-black text-xl px-4 py-1.5 rounded-xl tracking-wider uppercase">
                 ZAFIR
@@ -221,7 +292,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* UBICACIÓN Y CONTACTO */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Ubicación y Contacto</h3>
               <ul className="space-y-2.5 text-xs text-gray-300">
@@ -248,7 +318,6 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* SÍGUENOS */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Síguenos</h3>
               <div className="flex items-center gap-3">
@@ -278,7 +347,6 @@ export default function Home() {
                 </a>
               </div>
             </div>
-
           </div>
 
           <div className="pt-8 text-center text-xs text-gray-500">
