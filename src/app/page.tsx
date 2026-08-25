@@ -150,7 +150,7 @@ export default function CatalogoZafir() {
         {loading ? (
           <div className="text-center py-20 text-gray-500">Cargando catálogo exclusivo...</div>
         ) : productosPaginados.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
             {productosPaginados.map((prod) => {
               const img = prod.foto1_url || prod.imagen_url || prod.foto_url || 'https://via.placeholder.com/400?text=Sin+Imagen';
               const whatsappLink = `https://wa.me/595985492969?text=${encodeURIComponent(`Hola Zafir! Me interesa consultar por: ${prod.nombre}`)}`;
