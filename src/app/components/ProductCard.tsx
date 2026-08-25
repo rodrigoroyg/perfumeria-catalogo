@@ -8,6 +8,7 @@ interface Producto {
   precio_usd: number;
   precio_pyg: number;
   precio_brl: number;
+  stock?: number; // Agregado aquí
   imagen_url?: string;
   foto_url?: string;
 }
@@ -15,6 +16,10 @@ interface Producto {
 export const ProductCard = ({ producto }: { producto: Producto }) => {
   // Soporte para leer la imagen desde imagen_url o foto_url
   const imageUrl = producto.imagen_url || producto.foto_url || 'https://via.placeholder.com/400x400?text=Sin+Imagen';
+
+  // Verificación de stock
+  const cantidadStock = producto.stock ?? 0;
+  const tieneStock = cantidadStock > 0;
 
   // Formateadores de moneda
   const formatPYG = (val: number) => new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(val);
@@ -34,7 +39,9 @@ export const ProductCard = ({ producto }: { producto: Producto }) => {
         <img
           src={imageUrl}
           alt={producto.nombre}
-          className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
+          className={`w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500 ${
+            !tieneStock ? 'opacity-40 grayscale' : ''
+          }`}
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x400?text=Error+Imagen';
           }}
@@ -43,7 +50,23 @@ export const ProductCard = ({ producto }: { producto: Producto }) => {
 
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
-          <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{producto.nombre}</h3>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <h3 className="text-lg font-bold text-white line-clamp-1">{producto.nombre}</h3>
+          </div>
+
+          {/* Badge de Stock / Agotado */}
+          <div className="mb-2">
+            {tieneStock ? (
+              <span className="inline-block text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2.5 py-0.5 rounded-full font-medium">
+                Stock: {cantidadStock} un.
+              </span>
+            ) : (
+              <span className="inline-block text-[11px] text-red-400 bg-red-950/60 border border-red-800/50 px-2.5 py-0.5 rounded-full font-medium">
+                Agotado
+              </span>
+            )}
+          </div>
+
           <p className="text-xs text-gray-400 line-clamp-2 mb-4">{producto.descripcion || 'Fragancia exclusiva importada.'}</p>
         </div>
 
@@ -63,12 +86,16 @@ export const ProductCard = ({ producto }: { producto: Producto }) => {
           </div>
 
           <a
-            href={`https://wa.me/595981000000?text=${mensajeWhatsapp}`}
-            target="_blank"
+            href={tieneStock ? `https://wa.me/595981000000?text=${mensajeWhatsapp}` : '#'}
+            target={tieneStock ? '_blank' : '_self'}
             rel="noopener noreferrer"
-            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
+            className={`w-full font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm ${
+              tieneStock
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                : 'bg-gray-800 text-gray-500 cursor-not-allowed pointer-events-none'
+            }`}
           >
-            <span>Pedir por WhatsApp</span>
+            <span>{tieneStock ? 'Pedir por WhatsApp' : 'Sin Stock Disponible'}</span>
           </a>
         </div>
       </div>
