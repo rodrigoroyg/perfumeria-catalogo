@@ -121,7 +121,7 @@ export default function CatalogoZafir() {
 
           {/* FILTROS CATEGORÍAS */}
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            {['Todos', 'Masculino', 'Femenino', 'Unisex'].map((cat) => (
+            {['Todos', 'Masculino', 'Femenino', 'Unisex', 'Cosméticos', 'Maquillaje'].map((cat) => (
               <button
                 key={cat}
                 onClick={() => handleCategoria(cat)}
