@@ -7,13 +7,19 @@ export interface Product {
   id: number | string;
   name: string;
   brand: string;
+  category?: string;
   price: number;
   image?: string;
   inStock: boolean;
+  stock?: number;
   description?: string;
 }
 
-// COMPONENTE PRODUCT CARD INTEGRADO
+const API_URL = process.env.NEXT_PUBLIC_SHEETS_API_URL || '';
+const WHATSAPP_NUMBER = '595900000000'; // Ajustar con tu número oficial
+const ITEMS_PER_PAGE = 8;
+
+// COMPONENTE TARJETA DE PRODUCTO
 function ProductCard({ product, whatsappNumber }: { product: Product; whatsappNumber: string }) {
   const formattedPrice = new Intl.NumberFormat('es-PY', {
     style: 'currency',
@@ -28,36 +34,63 @@ function ProductCard({ product, whatsappNumber }: { product: Product; whatsappNu
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
   };
 
+  // Cálculo de stock
+  const isOutOfStock = !product.inStock || product.stock === 0;
+  const stockLabel = isOutOfStock
+    ? 'Agotado'
+    : product.stock !== undefined && product.stock > 0
+    ? `${product.stock} en existencia`
+    : 'Disponible';
+
   return (
     <div className="bg-[#0e131f] border border-gray-800/80 rounded-2xl p-5 flex flex-col justify-between hover:border-purple-500/50 transition-all duration-300 group hover:shadow-xl hover:shadow-purple-950/20">
       <div>
-        <div className="relative w-full h-52 bg-[#0a0d14] rounded-xl overflow-hidden flex items-center justify-center border border-gray-800/50 group-hover:border-purple-900/40 transition-colors">
+        {/* IMAGEN Y ETIQUETA DE STOCK */}
+        <div className="relative w-full h-56 bg-[#0a0d14] rounded-xl overflow-hidden flex items-center justify-center border border-gray-800/50 group-hover:border-purple-900/40 transition-colors">
           {product.image ? (
-            <img src={product.image} alt={product.name} className="object-contain h-full w-full p-4 group-hover:scale-105 transition-transform duration-300" />
+            <img
+              src={product.image}
+              alt={product.name}
+              className="object-contain h-full w-full p-4 group-hover:scale-105 transition-transform duration-300"
+            />
           ) : (
             <div className="text-gray-600 text-xs font-medium uppercase tracking-widest flex flex-col items-center gap-2">
-              <svg className="w-8 h-8 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
               <span>{product.brand}</span>
             </div>
           )}
-          <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-            product.inStock ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60' : 'bg-rose-950/80 text-rose-400 border border-rose-800/60'
-          }`}>
-            {product.inStock ? 'Disponible' : 'Agotado'}
+
+          <span
+            className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider backdrop-blur-md ${
+              !isOutOfStock
+                ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60'
+                : 'bg-rose-950/80 text-rose-400 border border-rose-800/60'
+            }`}
+          >
+            {stockLabel}
           </span>
         </div>
 
+        {/* DETALLES */}
         <div className="mt-4 space-y-1.5">
-          <p className="text-[11px] font-bold tracking-wider text-purple-400 uppercase">{product.brand}</p>
-          <h3 className="font-bold text-base text-white group-hover:text-purple-300 transition-colors line-clamp-1">{product.name}</h3>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold tracking-wider text-purple-400 uppercase">{product.brand}</span>
+            {product.category && (
+              <span className="text-[10px] text-gray-500 uppercase tracking-wide">{product.category}</span>
+            )}
+          </div>
+          <h3 className="font-bold text-base text-white group-hover:text-purple-300 transition-colors line-clamp-1">
+            {product.name}
+          </h3>
           {product.description && (
             <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">{product.description}</p>
           )}
         </div>
       </div>
 
+      {/* PRECIO Y BOTÓN */}
       <div className="mt-5 pt-4 border-t border-gray-800/60 flex items-center justify-between gap-3">
         <div>
           <span className="text-[10px] text-gray-500 block font-medium">Precio</span>
@@ -65,7 +98,7 @@ function ProductCard({ product, whatsappNumber }: { product: Product; whatsappNu
         </div>
         <button
           onClick={handleBuy}
-          disabled={!product.inStock}
+          disabled={isOutOfStock}
           className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-purple-600/20 active:scale-95"
         >
           Consultar
@@ -76,10 +109,6 @@ function ProductCard({ product, whatsappNumber }: { product: Product; whatsappNu
 }
 
 // PÁGINA PRINCIPAL
-const API_URL = process.env.NEXT_PUBLIC_SHEETS_API_URL || ''; 
-const WHATSAPP_NUMBER = '595900000000'; 
-const ITEMS_PER_PAGE = 8;
-
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -87,18 +116,21 @@ export default function Home() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // CARGA DE DATOS DESDE LA API DE GOOGLE SHEETS
   useEffect(() => {
     async function fetchProducts() {
       try {
         setLoading(true);
         if (!API_URL) {
+          // Datos estáticos de respaldo si no hay URL en .env
           setProducts([
-            { id: 1, name: 'Club de Nuit Intense Man', brand: 'Armaf', price: 350000, image: '', inStock: true, description: 'Amaderada especiada' },
-            { id: 2, name: 'Asad', brand: 'Lattafa', price: 280000, image: '', inStock: true, description: 'Cálida, ambarada' },
-            { id: 3, name: 'Hawas for Him', brand: 'Rasasi', price: 450000, image: '', inStock: false, description: 'Acuática y fresca' },
-            { id: 4, name: '9AM Dive', brand: 'Afnan', price: 310000, image: '', inStock: true, description: 'Menta y cítricos' },
+            { id: 1, name: 'Club de Nuit Intense Man', brand: 'Armaf', category: 'Perfumes', price: 350000, inStock: true, stock: 5, description: 'Fragancia amaderada especiada icónica.' },
+            { id: 2, name: 'Asad', brand: 'Lattafa', category: 'Perfumes', price: 280000, inStock: true, stock: 2, description: 'Perfume cálido, ambarado y especiado.' },
+            { id: 3, name: 'Hawas for Him', brand: 'Rasasi', category: 'Perfumes', price: 450000, inStock: false, stock: 0, description: 'Aroma fresco, acuático y duradero.' },
+            { id: 4, name: '9AM Dive', brand: 'Afnan', category: 'Perfumes', price: 310000, inStock: true, stock: 8, description: 'Cítrico, fresco y mentolado ideal para uso diario.' },
           ]);
           setLoading(false);
           return;
@@ -118,28 +150,37 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  // FILTROS ÚNICOS (MARCAS Y CATEGORÍAS)
   const brands = useMemo(() => {
     const list = Array.from(new Set(products.map((p) => p.brand).filter(Boolean)));
     return ['ALL', ...list];
   }, [products]);
 
+  const categories = useMemo(() => {
+    const list = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
+    return ['ALL', ...list];
+  }, [products]);
+
+  // FILTRADO COMBINADO
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesSearch =
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.brand.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesBrand = selectedBrand === 'ALL' || product.brand === selectedBrand;
-      return matchesSearch && matchesBrand;
+      const matchesCategory = selectedCategory === 'ALL' || product.category === selectedCategory;
+      return matchesSearch && matchesBrand && matchesCategory;
     });
-  }, [products, searchTerm, selectedBrand]);
+  }, [products, searchTerm, selectedBrand, selectedCategory]);
 
+  // PAGINACIÓN
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 300, behavior: 'smooth' });
   };
 
   return (
@@ -160,28 +201,60 @@ export default function Home() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-[#0a0d14] border border-gray-800 text-sm rounded-lg px-4 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full bg-[#0a0d14] border border-gray-800 text-sm rounded-xl px-4 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
         </div>
       </header>
 
+      {/* HERO BANNER ENCABEZADO */}
+      <section className="bg-gradient-to-b from-[#0e131f] to-[#0a0d14] border-b border-gray-800/60 py-16 px-4">
+        <div className="max-w-7xl mx-auto text-center space-y-4">
+          <span className="text-xs font-bold uppercase tracking-widest text-purple-400 bg-purple-950/60 border border-purple-800/50 px-3 py-1 rounded-full inline-block">
+            Fragancias Importadas & Cosméticos
+          </span>
+          <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tight uppercase">
+            Catálogo Exclusivo Zafir
+          </h2>
+          <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+            Explorá nuestra colección seleccionada de perfumes árabes importados. Calidad garantizada y entregas rápidas.
+          </p>
+        </div>
+      </section>
+
       {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">Catálogo de Perfumes</h2>
-            <p className="text-gray-400 text-sm mt-1">Fragancias árabes importadas exclusivas</p>
+        {/* BARRA DE FILTROS Y CATEGORÍAS */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 bg-[#0e131f] p-4 rounded-2xl border border-gray-800/80">
+          {/* CATEGORÍAS (BOTONES DE SELECCIÓN) */}
+          <div className="flex flex-wrap items-center gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                  selectedCategory === cat
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                    : 'bg-[#0a0d14] text-gray-400 border border-gray-800 hover:text-white'
+                }`}
+              >
+                {cat === 'ALL' ? 'Todas las Categorías' : cat}
+              </button>
+            ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          {/* FILTRO POR MARCA Y CONTADOR */}
+          <div className="flex items-center gap-3">
             <select
               value={selectedBrand}
               onChange={(e) => {
                 setSelectedBrand(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-[#0e131f] border border-gray-800 text-xs text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
+              className="bg-[#0a0d14] border border-gray-800 text-xs text-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-purple-500"
             >
               <option value="ALL">Todas las marcas</option>
               {brands.filter((b) => b !== 'ALL').map((brand) => (
@@ -191,7 +264,7 @@ export default function Home() {
               ))}
             </select>
 
-            <span className="text-xs text-gray-400 bg-[#0e131f] border border-gray-800 px-3 py-2 rounded-lg">
+            <span className="text-xs text-gray-400 bg-[#0a0d14] border border-gray-800 px-3 py-2 rounded-xl whitespace-nowrap">
               {filteredProducts.length} productos
             </span>
           </div>
@@ -201,14 +274,14 @@ export default function Home() {
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-[#0e131f] border border-gray-800 rounded-xl p-4 h-96 animate-pulse flex flex-col justify-between">
-                <div className="w-full h-48 bg-gray-800/50 rounded-lg"></div>
+              <div key={i} className="bg-[#0e131f] border border-gray-800 rounded-2xl p-4 h-96 animate-pulse flex flex-col justify-between">
+                <div className="w-full h-48 bg-gray-800/50 rounded-xl"></div>
                 <div className="space-y-3 mt-4">
                   <div className="h-3 bg-gray-800/50 rounded w-1/3"></div>
                   <div className="h-5 bg-gray-800/50 rounded w-3/4"></div>
                   <div className="h-4 bg-gray-800/50 rounded w-full"></div>
                 </div>
-                <div className="h-10 bg-gray-800/50 rounded-lg mt-4"></div>
+                <div className="h-10 bg-gray-800/50 rounded-xl mt-4"></div>
               </div>
             ))}
           </div>
@@ -220,14 +293,14 @@ export default function Home() {
             <p className="text-red-400 font-semibold">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-gray-800 text-xs font-bold text-white rounded-lg hover:bg-gray-700"
+              className="mt-4 px-4 py-2 bg-gray-800 text-xs font-bold text-white rounded-xl hover:bg-gray-700"
             >
               Reintentar
             </button>
           </div>
         )}
 
-        {/* GRILLA */}
+        {/* GRILLA DE PRODUCTOS */}
         {!loading && !error && currentProducts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {currentProducts.map((product) => (
@@ -239,7 +312,7 @@ export default function Home() {
         {/* SIN RESULTADOS */}
         {!loading && !error && currentProducts.length === 0 && (
           <div className="text-center py-20 bg-[#0e131f] rounded-2xl border border-gray-800/60">
-            <p className="text-gray-400 text-sm">No se encontraron perfumes con los filtros seleccionados.</p>
+            <p className="text-gray-400 text-sm">No se encontraron productos con los filtros seleccionados.</p>
           </div>
         )}
 
@@ -249,7 +322,7 @@ export default function Home() {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 rounded-lg border border-gray-800 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-800 text-gray-300 transition-colors"
+              className="px-4 py-2 rounded-xl border border-gray-800 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-800 text-gray-300 transition-colors"
             >
               Anterior
             </button>
@@ -258,7 +331,7 @@ export default function Home() {
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${
+                className={`w-10 h-10 rounded-xl text-sm font-semibold transition-all ${
                   currentPage === page
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
                     : 'border border-gray-800 text-gray-400 hover:bg-gray-800 hover:text-white'
@@ -271,7 +344,7 @@ export default function Home() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 rounded-lg border border-gray-800 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-800 text-gray-300 transition-colors"
+              className="px-4 py-2 rounded-xl border border-gray-800 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-800 text-gray-300 transition-colors"
             >
               Siguiente
             </button>
@@ -283,6 +356,7 @@ export default function Home() {
       <footer className="border-t border-gray-800/60 bg-[#080b11] pt-12 pb-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10 border-b border-gray-800/60">
+            {/* LOGO Y DESCRIPCIÓN */}
             <div className="space-y-4">
               <div className="inline-block bg-white text-black font-black text-xl px-4 py-1.5 rounded-xl tracking-wider uppercase">
                 ZAFIR
@@ -292,6 +366,7 @@ export default function Home() {
               </p>
             </div>
 
+            {/* UBICACIÓN Y CONTACTO */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Ubicación y Contacto</h3>
               <ul className="space-y-2.5 text-xs text-gray-300">
@@ -318,6 +393,7 @@ export default function Home() {
               </ul>
             </div>
 
+            {/* SÍGUENOS */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Síguenos</h3>
               <div className="flex items-center gap-3">
