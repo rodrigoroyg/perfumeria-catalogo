@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import ProductCard, { Product } from '@/components/ProductCard';
+import ProductCard, { Product } from '../components/ProductCard';
 
 const API_URL = process.env.NEXT_PUBLIC_SHEETS_API_URL || ''; 
 const WHATSAPP_NUMBER = '595900000000'; // Tu número de atención
