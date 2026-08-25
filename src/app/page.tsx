@@ -1,129 +1,138 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-[#1e2638]js';
 
-interface Producto {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  categoria: string;
-  precio_usd: number;
-  precio_pyg: number;
-  precio_brl: number;
-  foto1_url: string;
-}
+// Configuración de Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default function CatalogoPublico() {
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [busqueda, setBusqueda] = useState('');
-  const [categoriaSel, setCategoriaSel] = useState('Todos');
-  const [moneda, setMoneda] = useState<'PYG' | 'USD' | 'BRL'>('PYG');
+export default function CatalogoZafir() {
+  const [productos, setProductos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [categoria, setCategoria] = useState('Todos');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const productosPorPagina = 30;
 
   useEffect(() => {
-    obtenerProductos();
+    fetchProductos();
   }, []);
 
-  async function obtenerProductos() {
-    setCargando(true);
-    try {
-      const { data, error } = await supabase.from('productos').select('*');
-      if (!error && data) {
-        setProductos(data);
-      }
-    } catch (err) {
-      console.error('Error al cargar productos:', err);
-    } finally {
-      setCargando(false);
+  const fetchProductos = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('productos').select('*');
+    if (!error && data) {
+      setProductos(data);
     }
-  }
+    setLoading(false);
+  };
 
-  // Filtrado dinámico
-  const productosFiltrados = productos.filter(p => {
-    const coincideNombre = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
-    const coincideCat = categoriaSel === 'Todos' || p.categoria === categoriaSel;
-    return coincideNombre && coincideCat;
+  // Resetear a página 1 al filtrar o buscar
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPaginaActual(1);
+  };
+
+  const handleCategoria = (cat: string) => {
+    setCategoria(cat);
+    setPaginaActual(1);
+  };
+
+  // Filtrado de productos
+  const productosFiltrados = productos.filter((prod) => {
+    const coincideNombre = prod.nombre?.toLowerCase().includes(search.toLowerCase()) ||
+                          prod.descripcion?.toLowerCase().includes(search.toLowerCase());
+    const coincideCategoria = categoria === 'Todos' || prod.categoria?.toLowerCase() === categoria.toLowerCase();
+    return coincideNombre && coincideCategoria;
   });
 
-  const TELEFONO_WHATSAPP = '595981000000'; // Reemplaza por tu número de WhatsApp
-
-  function enviarWhatsApp(producto: Producto) {
-    const mensaje = encodeURIComponent(`¡Hola Perfumería Zafir! Me interesa el producto: *${producto.nombre}*. ¿Tienen stock disponible?`);
-    window.open(`https://wa.me/${TELEFONO_WHATSAPP}?text=${mensaje}`, '_blank');
-  }
+  // Lógica de Paginación (30 por página)
+  const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina);
+  const indiceInicio = (paginaActual - 1) * productosPorPagina;
+  const productosPaginados = productosFiltrados.slice(indiceInicio, indiceInicio + productosPorPagina);
 
   return (
-    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 pb-12">
-      {/* Navbar / Header */}
-      <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div className="min-h-screen bg-[#0a0d14] text-gray-100 font-sans selection:bg-purple-500 selection:text-white">
+      
+      {/* NAVBAR SUPERIOR ELEGANTE */}
+      <header className="sticky top-0 z-50 bg-[#0e131f]/90 backdrop-blur-md border-b border-gray-800/60 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+          
+          {/* Logo Brand */}
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-lg shadow-purple-500/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-purple-500/20 border border-purple-400/30">
               Z
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight text-white">Perfumería Zafir</h1>
-              <p className="text-[11px] text-purple-400 font-semibold tracking-wider uppercase">Catálogo Exclusivo</p>
+              <span className="text-xl font-bold tracking-tight text-white block">ZAFIR</span>
+              <span className="text-[10px] font-semibold text-purple-400 tracking-widest uppercase block -mt-1">Perfumería de Lujo</span>
             </div>
           </div>
-{/* Botón Acceso Admin */}
-  <a
-    href="/admin"
-    className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shadow-sm"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-    <span>Admin</span>
-  </a>
-          {/* Selector de Monedas */}
-          <div className="flex items-center gap-2 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700">
-            <span className="text-xs font-bold text-slate-400 pl-2">Moneda:</span>
-            {(['PYG', 'USD', 'BRL'] as const).map(m => (
-              <button
-                key={m}
-                onClick={() => setMoneda(m)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
-                  moneda === m 
-                    ? 'bg-purple-600 text-white shadow-md' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {m === 'PYG' ? '₲ PYG' : m === 'USD' ? '$ USD' : 'R$ BRL'}
-              </button>
-            ))}
+
+          {/* Buscador Central */}
+          <div className="flex-1 max-w-md hidden md:block">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar fragancia, notas o marcas..."
+                value={search}
+                onChange={handleSearch}
+                className="w-full bg-[#151c2c] border border-gray-800 text-sm text-white placeholder-gray-500 rounded-full pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
+              />
+              <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
           </div>
+
+          {/* Botón Admin Discreto */}
+          <a
+            href="/admin"
+            className="flex items-center gap-2 bg-[#182032] hover:bg-purple-950/40 text-gray-300 hover:text-purple-300 border border-gray-700/80 hover:border-purple-500/40 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm"
+          >
+            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>Panel Admin</span>
+          </a>
+        </div>
+
+        {/* Buscador Mobile */}
+        <div className="px-4 pb-3 md:hidden">
+          <input
+            type="text"
+            placeholder="Buscar fragancia..."
+            value={search}
+            onChange={handleSearch}
+            className="w-full bg-[#151c2c] border border-gray-800 text-sm text-white placeholder-gray-500 rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500"
+          />
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 pt-10 pb-6 text-center space-y-4">
-        <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-300">
-          Encuentra tu Fragancia Ideal
-        </h2>
-        <p className="text-slate-400 text-sm max-w-xl mx-auto">
-          Explora nuestra selección de perfumería fina importada al mejor precio en Dólares, Guaraníes y Reales.
-        </p>
+      {/* BANNER PRINCIPAL ESTILO HERO */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#111726] to-[#0a0d14] border-b border-gray-800/40 py-12 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          <span className="inline-block px-3 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold rounded-full mb-3 tracking-wider uppercase">
+            Colección 2026
+          </span>
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">
+            Encuentra tu Fragancia Signature
+          </h1>
+          <p className="text-gray-400 text-sm sm:text-base max-w-xl mx-auto mb-8">
+            Catálogo exclusivo de perfumes importados. Precios transparentes en Dólares, Guaraníes y Reales.
+          </p>
 
-        {/* Buscador & Categorías */}
-        <div className="max-w-2xl mx-auto space-y-4 pt-4">
-          <input
-            type="text"
-            placeholder="🔍 Buscar perfume o marca..."
-            className="w-full p-4 bg-slate-900 border border-slate-800 rounded-2xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xl"
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-          />
-
-          <div className="flex flex-wrap justify-center gap-2">
-            {['Todos', 'Masculino', 'Femenino', 'Unisex', 'Cosméticos'].map(cat => (
+          {/* FILTROS CATEGORÍAS */}
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            {['Todos', 'Masculino', 'Femenino', 'Unisex'].map((cat) => (
               <button
                 key={cat}
-                onClick={() => setCategoriaSel(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  categoriaSel === cat
-                    ? 'bg-purple-600/20 text-purple-300 border border-purple-500/50'
-                    : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700'
+                onClick={() => handleCategoria(cat)}
+                className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${
+                  categoria === cat
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30 scale-105'
+                    : 'bg-[#151c2c] text-gray-400 hover:text-white border border-gray-800 hover:border-gray-700'
                 }`}
               >
                 {cat}
@@ -133,57 +142,128 @@ export default function CatalogoPublico() {
         </div>
       </section>
 
-      {/* Grid de Productos */}
-      <main className="max-w-7xl mx-auto px-4 pt-6">
-        {cargando ? (
-          <div className="text-center py-20 text-slate-500 font-medium">Cargando fragancias...</div>
-        ) : productosFiltrados.length === 0 ? (
-          <div className="text-center py-20 text-slate-500 font-medium">No se encontraron productos disponibles.</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {productosFiltrados.map(p => (
-              <div key={p.id} className="bg-slate-900 rounded-3xl border border-slate-800/80 overflow-hidden shadow-lg flex flex-col hover:border-purple-500/40 transition-all group">
-                {/* Imagen */}
-                <div className="h-64 overflow-hidden bg-slate-950 relative">
-                  <img
-                    src={p.foto1_url || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&q=80'}
-                    alt={p.nombre}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <span className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-extrabold text-purple-300 border border-purple-500/20">
-                    {p.categoria}
-                  </span>
-                </div>
+      {/* CATÁLOGO DE PRODUCTOS */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        {/* Contadores y Estado */}
+        <div className="flex justify-between items-center mb-6 text-xs text-gray-400">
+          <span>Mostrando {productosFiltrados.length > 0 ? indiceInicio + 1 : 0} - {Math.min(indiceInicio + productosPorPagina, productosFiltrados.length)} de {productosFiltrados.length} perfumes</span>
+          <span>Página {paginaActual} de {totalPaginas || 1}</span>
+        </div>
 
-                {/* Detalle */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <h3 className="font-bold text-base text-slate-100 group-hover:text-purple-300 transition-colors">{p.nombre}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 mt-1 font-normal">{p.descripcion || 'Fragancia exclusiva importada.'}</p>
+        {loading ? (
+          <div className="text-center py-20 text-gray-500">Cargando catálogo exclusivo...</div>
+        ) : productosPaginados.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {productosPaginados.map((prod) => {
+              const img = prod.imagen_url || prod.foto_url || 'https://via.placeholder.com/400?text=Sin+Imagen';
+              const whatsappLink = `https://wa.me/595981000000?text=${encodeURIComponent(`Hola Zafir! Me interesa consultar por: ${prod.nombre}`)}`;
+
+              return (
+                <div
+                  key={prod.id}
+                  className="bg-[#121826] border border-gray-800/80 rounded-2xl overflow-hidden hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between shadow-xl group"
+                >
+                  {/* Foto con Badge */}
+                  <div className="relative aspect-square w-full bg-[#0b0e14] overflow-hidden p-4 flex items-center justify-center">
+                    {prod.categoria && (
+                      <span className="absolute top-3 right-3 bg-[#182032]/90 backdrop-blur-md text-[10px] text-purple-300 font-bold px-2.5 py-1 rounded-full border border-purple-500/20 z-10 uppercase tracking-wider">
+                        {prod.categoria}
+                      </span>
+                    )}
+                    <img
+                      src={img}
+                      alt={prod.nombre}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400?text=Imagen+No+Disponible';
+                      }}
+                    />
                   </div>
 
-                  {/* Precio & Botón WhatsApp */}
-                  <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                  {/* Detalles */}
+                  <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Precio</span>
-                      <span className="text-lg font-black text-emerald-400">
-                        {moneda === 'PYG' && `₲ ${p.precio_pyg.toLocaleString()}`}
-                        {moneda === 'USD' && `$ ${p.precio_usd.toFixed(2)}`}
-                        {moneda === 'BRL' && `R$ ${p.precio_brl.toFixed(2)}`}
-                      </span>
+                      <h3 className="text-base font-bold text-white mb-1 group-hover:text-purple-300 transition-colors line-clamp-1">
+                        {prod.nombre}
+                      </h3>
+                      <p className="text-xs text-gray-400 line-clamp-2 mb-4 leading-relaxed">
+                        {prod.descripcion || 'Fragancia importada premium.'}
+                      </p>
                     </div>
 
-                    <button
-                      onClick={() => enviarWhatsApp(p)}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-2xl transition-all font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-900/20"
-                      title="Consultar por WhatsApp"
-                    >
-                      💬 Pedir
-                    </button>
+                    {/* Precios Triple Moneda */}
+                    <div className="pt-3 border-t border-gray-800/80">
+                      <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-0.5">Precio</div>
+                      
+                      {/* Principal USD */}
+                      <div className="text-xl font-extrabold text-white mb-1">
+                        ${Number(prod.precio_usd || 0).toFixed(2)} <span className="text-xs text-gray-400 font-normal">USD</span>
+                      </div>
+
+                      {/* Secundarios PYG / BRL */}
+                      <div className="flex items-center justify-between text-xs font-semibold mb-4 bg-[#0a0d14]/60 p-2 rounded-lg border border-gray-800/50">
+                        <span className="text-emerald-400">Gs. {Number(prod.precio_pyg || 0).toLocaleString('es-PY')}</span>
+                        <span className="text-gray-600">•</span>
+                        <span className="text-blue-400">R$ {Number(prod.precio_brl || 0).toFixed(2)}</span>
+                      </div>
+
+                      {/* Botón Pedir */}
+                      <a
+                        href={whatsappLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-900/20 text-xs"
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
+                        </svg>
+                        <span>Pedir por WhatsApp</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-20 text-gray-500">
+            No se encontraron perfumes con esos filtros.
+          </div>
+        )}
+
+        {/* CONTROLES DE PAGINACIÓN (30 PRODUCTOS MÁXIMO POR PÁGINA) */}
+        {totalPaginas > 1 && (
+          <div className="mt-12 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setPaginaActual((prev) => Math.max(prev - 1, 1))}
+              disabled={paginaActual === 1}
+              className="px-4 py-2 rounded-xl bg-[#121826] border border-gray-800 text-xs font-semibold text-gray-300 hover:text-white hover:border-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              Anterior
+            </button>
+
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
+              <button
+                key={num}
+                onClick={() => setPaginaActual(num)}
+                className={`w-9 h-9 rounded-xl text-xs font-bold transition-all ${
+                  paginaActual === num
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                    : 'bg-[#121826] border border-gray-800 text-gray-400 hover:text-white'
+                }`}
+              >
+                {num}
+              </button>
             ))}
+
+            <button
+              onClick={() => setPaginaActual((prev) => Math.min(prev + 1, totalPaginas))}
+              disabled={paginaActual === totalPaginas}
+              className="px-4 py-2 rounded-xl bg-[#121826] border border-gray-800 text-xs font-semibold text-gray-300 hover:text-white hover:border-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              Siguiente
+            </button>
           </div>
         )}
       </main>
