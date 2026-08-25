@@ -66,7 +66,16 @@ export default function CatalogoPublico() {
               <p className="text-[11px] text-purple-400 font-semibold tracking-wider uppercase">Catálogo Exclusivo</p>
             </div>
           </div>
-
+{/* Botón Acceso Admin */}
+  <a
+    href="/admin"
+    className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shadow-sm"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+    <span>Admin</span>
+  </a>
           {/* Selector de Monedas */}
           <div className="flex items-center gap-2 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700">
             <span className="text-xs font-bold text-slate-400 pl-2">Moneda:</span>
