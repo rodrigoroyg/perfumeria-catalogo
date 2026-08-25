@@ -12,10 +12,13 @@ export default function CatalogoZafir() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoria, setCategoria] = useState('Todos');
+  const [paginaActual, setPaginaActual] = useState(1);
+
   const cambiarPagina = (nuevaPagina: number) => {
-  setPaginaActual(nuevaPagina);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+    setPaginaActual(nuevaPagina);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const productosPorPagina = 30;
 
   useEffect(() => {
