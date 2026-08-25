@@ -59,16 +59,12 @@ export default function CatalogoZafir() {
       <header className="sticky top-0 z-50 bg-[#0e131f]/90 backdrop-blur-md border-b border-gray-800/60 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           
-          {/* Logo Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-purple-500/20 border border-purple-400/30">
-              Z
-            </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight text-white block">ZAFIR</span>
-              <span className="text-[10px] font-semibold text-purple-400 tracking-widest uppercase block -mt-1">Perfumería de Lujo</span>
-            </div>
-          </div>
+{/* Logo Brand Zafir */}
+<div className="flex items-center gap-3">
+  <div className="bg-black text-white px-4 py-2 rounded-xl font-extrabold tracking-wider border border-gray-800 shadow-md">
+    <span className="text-xl">ZAFIR</span>
+  </div>
+</div>
 
           {/* Buscador Central */}
           <div className="flex-1 max-w-md hidden md:block">
