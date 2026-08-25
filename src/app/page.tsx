@@ -152,8 +152,8 @@ export default function CatalogoZafir() {
         ) : productosPaginados.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {productosPaginados.map((prod) => {
-              const img = prod.imagen_url || prod.foto_url || 'https://via.placeholder.com/400?text=Sin+Imagen';
-              const whatsappLink = `https://wa.me/595981000000?text=${encodeURIComponent(`Hola Zafir! Me interesa consultar por: ${prod.nombre}`)}`;
+              const img = prod.foto1_url || prod.imagen_url || prod.foto_url || 'https://via.placeholder.com/400?text=Sin+Imagen';
+              const whatsappLink = `https://wa.me/595985492969?text=${encodeURIComponent(`Hola Zafir! Me interesa consultar por: ${prod.nombre}`)}`;
 
               return (
                 <div
