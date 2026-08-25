@@ -161,9 +161,9 @@ export default function CatalogoZafir() {
                   className="bg-[#121826] border border-gray-800/80 rounded-2xl overflow-hidden hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between shadow-xl group"
                 >
                   {/* Foto con Badge */}
-                  <div className="relative aspect-square w-full bg-[#0b0e14] overflow-hidden p-4 flex items-center justify-center">
+                  <div className="relative aspect-square w-full bg-white overflow-hidden p-4 flex items-center justify-center">
                     {prod.categoria && (
-                      <span className="absolute top-3 right-3 bg-[#182032]/90 backdrop-blur-md text-[10px] text-purple-300 font-bold px-2.5 py-1 rounded-full border border-purple-500/20 z-10 uppercase tracking-wider">
+                      <span className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-[10px] text-white font-bold px-2.5 py-1 rounded-full border border-gray-700 z-10 uppercase tracking-wider">
                         {prod.categoria}
                       </span>
                     )}
